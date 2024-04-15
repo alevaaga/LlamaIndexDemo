@@ -10,7 +10,11 @@ from crayon.ingestion.indexing import IndexStrategy
 
 
 class SimpleIndexStrategy(IndexStrategy):
-    def build_index(self, namespace: str, nodes: List[BaseNode], transforms: List[TransformComponent] | None = None) -> Dict[Any, BaseIndex]:
+    def build_index(
+            self, namespace: str,
+            nodes: List[BaseNode],
+            transforms: List[TransformComponent] | None = None
+    ) -> Dict[Any, BaseIndex]:
         index_set = {}
 
         storage_context = get_storage_context_filesystem(db_name=self.db_name)

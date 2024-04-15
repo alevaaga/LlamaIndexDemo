@@ -37,7 +37,7 @@ def build_indices(base_dir: str, db_name: str) -> Dict[str, Dict[Any, BaseIndex]
     index_set = {}
     for company_path in company_paths:
         company_name = company_path.name
-        print(f"Loading documents for {company_path}.....")
+        print(f"Loading documents for {company_name}.....")
         company_docs = load_documents(base_dir=company_path)
 
         print(f"Creating Index for {company_path}.....")
@@ -49,26 +49,6 @@ def build_indices(base_dir: str, db_name: str) -> Dict[str, Dict[Any, BaseIndex]
         )
         index_set[company_name] = company_index_set
     return index_set
-
-
-def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[QueryEngineTool]:
-    all_tools = []
-    for company in companies_index_set:
-        index_set = companies_index_set[company]
-
-        individual_query_engine_tools = [
-            QueryEngineTool(
-                query_engine=index_set[index_name].as_query_engine(),
-                metadata=ToolMetadata(
-                    name=f"vector_index_{company}_{company}",
-                    description=f"useful for when you want to answer queries about SEC 10-K for {company}",
-                ),
-            )
-            for index_name in index_set.keys()
-        ]
-        company_tools = individual_query_engine_tools
-        all_tools.extend(company_tools)
-    return all_tools
 
 
 def main(base_dir: str):
