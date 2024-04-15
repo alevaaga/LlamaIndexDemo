@@ -28,6 +28,7 @@ class SimpleIndexStrategy(IndexStrategy):
         )
         index_set[namespace].set_index_id(f"{namespace}_{namespace}_VectorIndex")
         storage_context.persist(persist_dir=storage_context.persist_dir)
+        return index_set
 
 
 class IndexByYear(IndexStrategy):
