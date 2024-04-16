@@ -1,6 +1,4 @@
-import logging
 import re
-import sys
 from typing import List, Dict, Any
 
 import llama_index
@@ -19,9 +17,6 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
-
-# logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-# logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[QueryEngineTool]:

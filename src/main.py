@@ -1,7 +1,4 @@
-from typing import Dict
-
 import gradio as gr
-from gradio import Textbox
 from llama_index.core import Settings
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.types import BaseChatEngine
@@ -11,8 +8,8 @@ from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
 from crayon.finance_chatbot import create_chat_engine as create_chat_engine_full
-from crayon.finance_chatbot_simple import create_chat_engine as create_chat_engine_simple
 from crayon.finance_chatbot_hello_world import create_chat_engine as create_chat_engine_hello_world
+from crayon.finance_chatbot_simple import create_chat_engine as create_chat_engine_simple
 
 #
 # PyCharm debugger issues:
@@ -28,7 +25,6 @@ backends = {
 
 selected_backend = "hello_world"
 chat_engines = dict()
-
 
 
 def get_chat_engine() -> BaseChatEngine:

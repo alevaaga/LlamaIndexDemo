@@ -1,7 +1,3 @@
-import logging
-import sys
-from typing import Tuple
-
 import llama_index
 from llama_index.core import Settings, load_indices_from_storage, ServiceContext
 from llama_index.core.callbacks import LlamaDebugHandler
@@ -13,9 +9,6 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
-
-# logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-# logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def load_indices(db_name: str) -> BaseIndex:
