@@ -1,13 +1,15 @@
 import logging
 import re
 import sys
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 import llama_index
 from llama_index.agent.openai import OpenAIAgent
 from llama_index.core import Settings, load_indices_from_storage, ServiceContext
 from llama_index.core.callbacks import LlamaDebugHandler
+from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.core.indices.base import BaseIndex
+from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import QueryEngineTool
 from llama_index.core.tools import ToolMetadata
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -16,8 +18,8 @@ from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
+# logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+# logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[QueryEngineTool]:
@@ -63,21 +65,29 @@ def load_indices(db_name: str) -> Dict[str, Dict[Any, BaseIndex]]:
     return companies_index_set
 
 
-def main():
+def create_chat_engine()-> BaseChatEngine:
     companies_index_set = load_indices(db_name="SimpleIndex")
     all_tools = build_tools(companies_index_set)
 
-    agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, verbose=True)
+    memory = ChatMemoryBuffer.from_defaults(token_limit=10000)
+    agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
+    return agent
+
+
+def main():
+    chat_engine, memory = create_chat_engine()
 
     while True:
         text_input = input("User: ")
         if text_input == "exit":
             break
-        response = agent.chat(text_input)
+        response = chat_engine.chat(text_input)
         print(f"Agent: {response}")
 
 
 if __name__ == '__main__':
+    print("Staring Chatbot Simple")
+
     crayon.STORAGE_ROOT = "storage/Finance"
     crayon.CACHE_ROOT = "storage/cache"
 

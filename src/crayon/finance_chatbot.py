@@ -7,7 +7,9 @@ import llama_index
 from llama_index.agent.openai import OpenAIAgent
 from llama_index.core import Settings, load_indices_from_storage, ServiceContext
 from llama_index.core.callbacks import LlamaDebugHandler
+from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.core.indices.base import BaseIndex
+from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.query_engine import SubQuestionQueryEngine
 from llama_index.core.question_gen import LLMQuestionGenerator
 from llama_index.core.tools import QueryEngineTool
@@ -18,8 +20,8 @@ from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
+# logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+# logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[QueryEngineTool]:
@@ -79,12 +81,17 @@ def load_indices() -> Dict[str, Dict[Any, BaseIndex]]:
     return companies_index_set
 
 
-def main():
+def create_chat_engine()-> BaseChatEngine:
     companies_index_set = load_indices()
     all_tools = build_tools(companies_index_set)
 
-    agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, verbose=True)
+    memory = ChatMemoryBuffer.from_defaults(token_limit=10000)
+    agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
+    return agent
 
+
+def main():
+    agent, memory = create_chat_engine()
     while True:
         text_input = input("User: ")
         if text_input == "exit":
@@ -94,6 +101,7 @@ def main():
 
 
 if __name__ == '__main__':
+    print("Staring Chatbot Full")
     crayon.STORAGE_ROOT = "storage/Finance"
     crayon.CACHE_ROOT = "storage/cache"
 

@@ -1,3 +1,5 @@
+import logging
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -9,6 +11,11 @@ from llama_index.core.storage.index_store import SimpleIndexStore
 from llama_index.core.storage.index_store.types import BaseIndexStore
 from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.core.vector_stores.types import VectorStore
+
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
+
 
 STORAGE_ROOT = "./storage/Finance"
 CACHE_ROOT = "storage/cache"

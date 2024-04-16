@@ -1,25 +1,21 @@
 import logging
-import re
 import sys
-from typing import List, Dict, Any
+from typing import Tuple
 
 import llama_index
-from llama_index.agent.openai import OpenAIAgent
 from llama_index.core import Settings, load_indices_from_storage, ServiceContext
 from llama_index.core.callbacks import LlamaDebugHandler
-from llama_index.core.chat_engine.types import ChatMode
+from llama_index.core.chat_engine.types import ChatMode, BaseChatEngine
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.core.tools import QueryEngineTool
-from llama_index.core.tools import ToolMetadata
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
+# logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+# logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def load_indices(db_name: str) -> BaseIndex:
@@ -53,7 +49,7 @@ def dump_memory(memory: ChatMemoryBuffer):
         print(f"{m.role.upper()}: {m.content}")
 
 
-def repl_chat_engine():
+def create_chat_engine()-> BaseChatEngine:
     index = load_indices(db_name="HelloWorldIndex")
 
     memory = ChatMemoryBuffer.from_defaults(token_limit=3000)
@@ -65,7 +61,11 @@ def repl_chat_engine():
             "answer questions about Crayon, SoftwareOne and Uber."
         ),
     )
+    return chat_engine
 
+
+def repl_chat_engine():
+    chat_engine, memory = create_chat_engine()
     while True:
         text_input = input("User: ")
         if text_input == "exit":
@@ -76,6 +76,8 @@ def repl_chat_engine():
 
 
 if __name__ == '__main__':
+    print("Staring Chatbot Hello, World")
+
     crayon.STORAGE_ROOT = "storage/Finance"
     crayon.CACHE_ROOT = "storage/cache"
 
