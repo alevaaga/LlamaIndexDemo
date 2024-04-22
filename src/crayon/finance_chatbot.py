@@ -76,7 +76,7 @@ def load_indices() -> Dict[str, Dict[Any, BaseIndex]]:
     return companies_index_set
 
 
-def create_chat_engine()-> BaseChatEngine:
+def create_chat_engine() -> BaseChatEngine:
     companies_index_set = load_indices()
     all_tools = build_tools(companies_index_set)
 

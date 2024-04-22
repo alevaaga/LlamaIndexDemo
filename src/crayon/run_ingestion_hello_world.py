@@ -1,15 +1,12 @@
 import logging
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
 
 import llama_index
 from llama_index.core import Settings
 from llama_index.core.callbacks import LlamaDebugHandler
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.tools import QueryEngineTool
-from llama_index.core.tools import ToolMetadata
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
