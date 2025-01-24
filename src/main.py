@@ -1,10 +1,14 @@
 import gradio as gr
 from llama_index.core import Settings
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
 from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.ollama import Ollama
+from llama_index.llms.vllm import Vllm
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
+from llama_index.llms.openai_like import OpenAILike
 
 import crayon
 from crayon.finance_chatbot import create_chat_engine as create_chat_engine_full
@@ -16,14 +20,13 @@ from crayon.finance_chatbot_simple import create_chat_engine as create_chat_engi
 # As a workaround I disabled this settings -> Help | Find Action | Registry | python.debug.asyncio.repl
 #
 
-
 backends = {
     "hello_world": create_chat_engine_hello_world,
     "simple": create_chat_engine_simple,
     "full": create_chat_engine_full
 }
 
-selected_backend = "hello_world"
+selected_backend = "full"
 chat_engines = dict()
 
 
@@ -75,6 +78,8 @@ def main():
         textbox=gr.Textbox(placeholder="Ask me a yes something", container=False, scale=7, lines=4),
         theme="soft",
         examples=[
+            ["Compare the profitability of Crayon and SoftwareOne, year of year, from 2019 through 2023"],
+            ["How much did Crayon's gross profit increase from 2018 to 2023?"],
             ["What was Crayon's total revenue in 2023?"],
             ["How much did it grow from 2022?"],
             ["In what year did Crayon have it's highest earning pr. share?"],
@@ -98,7 +103,7 @@ def main():
                     ("Hello, World", "hello_world"),
                     ("Index pr. Company", "simple"),
                     ("Index pr. Document", "full")
-                ], label="Backend", value="hello_world")
+                ], label="Backend", value="full")
                 backend_radio.select(fn=select_backend, inputs=backend_radio)
             with gr.Column():
                 # output = gr.TextArea(label="Citations")
@@ -112,9 +117,21 @@ if __name__ == '__main__':
     crayon.STORAGE_ROOT = "storage/Finance"
     crayon.CACHE_ROOT = "storage/cache"
 
-    llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
+    # llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
+
+    llm = OpenAI(
+        api_base="http://wizzo.akhbar.home:5000/v1",
+        api_key="sk-ollama",
+        model="gpt-4-turbo",
+        temperature=1.0,
+        timeout=180,
+        verbose=True
+    )
 
     embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
     Settings.llm = llm
     Settings.embed_model = embed_model
+    llama_debug = LlamaDebugHandler(print_trace_on_end=True)
+    callback_manager = CallbackManager([llama_debug])
+    Settings.callback_manager = callback_manager
     main()

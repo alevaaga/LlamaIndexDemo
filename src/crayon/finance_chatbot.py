@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 import llama_index
 from llama_index.agent.openai import OpenAIAgent
 from llama_index.core import Settings, load_indices_from_storage, ServiceContext
+from llama_index.core.agent import FunctionCallingAgentWorker
 from llama_index.core.callbacks import LlamaDebugHandler
 from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.core.indices.base import BaseIndex
@@ -17,6 +18,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
+from ollamaramaagent import OllamaRamaAgent
 
 
 def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[QueryEngineTool]:
@@ -81,7 +83,17 @@ def create_chat_engine() -> BaseChatEngine:
     all_tools = build_tools(companies_index_set)
 
     memory = ChatMemoryBuffer.from_defaults(token_limit=10000)
-    agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
+    agent = OllamaRamaAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
+    # if isinstance(Settings.llm, OpenAI):
+    #     agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
+    # else:
+    #     agent_worker = FunctionCallingAgentWorker.from_tools(
+    #         all_tools,
+    #         llm=Settings.llm,
+    #         verbose=True,
+    #         allow_parallel_tool_calls=False,
+    #     )
+    #     agent = agent_worker.as_agent()
     return agent
 
 

@@ -61,19 +61,6 @@ if __name__ == '__main__':
     input_dir = "data/Knowledgebase/Finance"
 
     llama_index.core.global_handler = LlamaDebugHandler(print_trace_on_end=True)
-    # llm = FunctionalOpenAILike(
-    #     # model="dolphin-mixtral:latest",
-    #     model="nous-hermes2-mixtral:large-ctx",
-    #     api_base="http://ws239.akhbar.home:5000/v1",
-    #     api_key="sk-ollama",
-    #     temperature=0.1,  # Default 0.7
-    #     top_p=0.9,  # Default 0.9
-    #     timeout=120,
-    #     # max_tokens=4096,
-    #     # context_window=16384,
-    #     is_function_calling_model=True,
-    #     is_chat_model=True,
-    # )
     llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
 
     embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
