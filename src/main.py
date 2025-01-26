@@ -1,14 +1,13 @@
+from collections import defaultdict
+
 import gradio as gr
 from llama_index.core import Settings
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
 from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.llms.ollama import Ollama
-from llama_index.llms.vllm import Vllm
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
-from llama_index.llms.openai_like import OpenAILike
 
 import crayon
 from crayon.finance_chatbot import create_chat_engine as create_chat_engine_full
@@ -27,13 +26,12 @@ backends = {
 }
 
 selected_backend = "full"
-chat_engines = dict()
+chat_engines = defaultdict(lambda: backends[selected_backend]())
 
 
 def get_chat_engine() -> BaseChatEngine:
     global selected_backend
-    chat_engine = chat_engines.get(selected_backend, backends[selected_backend]())
-    chat_engines[selected_backend] = chat_engine
+    chat_engine = chat_engines[selected_backend]
     return chat_engine
 
 
@@ -58,8 +56,10 @@ def main():
 
         citation_str = "<h1>Citations</h1></br>"
         for src in reply.source_nodes:
+            if not src.score:
+                continue
             citation_str += f"<H2>Score: {src.score:.2f}</H2>"
-            citation_str += f"<H3>Filename: {src.metadata['file_name']}</H3>"
+            citation_str += f"<H3>Filename: {src.metadata['filename']}</H3>"
             citation_str += f"<p>{src.text}</p>"
 
         citations = citation_str
@@ -75,7 +75,7 @@ def main():
     chat_interface = gr.ChatInterface(
         predict,
         chatbot=chatbot,
-        textbox=gr.Textbox(placeholder="Ask me a yes something", container=False, scale=7, lines=4),
+        textbox=gr.Textbox(placeholder="Ask me something", container=False, scale=7, lines=4),
         theme="soft",
         examples=[
             ["Compare the profitability of Crayon and SoftwareOne, year of year, from 2019 through 2023"],
@@ -88,6 +88,7 @@ def main():
             ["What was Uber's highest cost in 2020?"],
             ["Did it go up or down in 2021?"],
             ["In what year did SoftwareOne have it's highest earning pr. share?"],
+            ["Compare the profitability of Crayon and SoftwareOne, year of year, from 2019 through 2023"],
         ],
         cache_examples=False,
         retry_btn="Regenerate",
@@ -117,16 +118,16 @@ if __name__ == '__main__':
     crayon.STORAGE_ROOT = "storage/Finance"
     crayon.CACHE_ROOT = "storage/cache"
 
-    # llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
+    llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
 
-    llm = OpenAI(
-        api_base="http://wizzo.akhbar.home:5000/v1",
-        api_key="sk-ollama",
-        model="gpt-4-turbo",
-        temperature=1.0,
-        timeout=180,
-        verbose=True
-    )
+    # llm = OpenAI(
+    #     api_base="http://wizzo.akhbar.home:5000/v1",
+    #     api_key="sk-ollama",
+    #     model="gpt-4-turbo",
+    #     temperature=1.0,
+    #     timeout=180,
+    #     verbose=True
+    # )
 
     embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
     Settings.llm = llm

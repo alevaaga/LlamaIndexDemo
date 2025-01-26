@@ -59,10 +59,9 @@ def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[Qu
 def load_indices() -> Dict[str, Dict[Any, BaseIndex]]:
     print("Initializing context.....")
     storage_context = crayon.get_storage_context_filesystem(db_name="MultiIndex")
-    service_context = ServiceContext.from_defaults(llm=Settings.llm, embed_model=Settings.embed_model)
 
     print("Loading indices.....")
-    all_indices = load_indices_from_storage(storage_context=storage_context, service_context=service_context, index_ids=None)
+    all_indices = load_indices_from_storage(storage_context=storage_context, index_ids=None)
 
     companies_index_set = {}
     for index in all_indices:
@@ -83,17 +82,7 @@ def create_chat_engine() -> BaseChatEngine:
     all_tools = build_tools(companies_index_set)
 
     memory = ChatMemoryBuffer.from_defaults(token_limit=10000)
-    agent = OllamaRamaAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
-    # if isinstance(Settings.llm, OpenAI):
-    #     agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
-    # else:
-    #     agent_worker = FunctionCallingAgentWorker.from_tools(
-    #         all_tools,
-    #         llm=Settings.llm,
-    #         verbose=True,
-    #         allow_parallel_tool_calls=False,
-    #     )
-    #     agent = agent_worker.as_agent()
+    agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
     return agent
 
 
@@ -113,19 +102,6 @@ if __name__ == '__main__':
     crayon.CACHE_ROOT = "storage/cache"
 
     llama_index.core.global_handler = LlamaDebugHandler(print_trace_on_end=True)
-    # llm = FunctionalOpenAILike(
-    #     # model="dolphin-mixtral:latest",
-    #     model="nous-hermes2-mixtral:large-ctx",
-    #     api_base="http://ws239.akhbar.home:5000/v1",
-    #     api_key="sk-ollama",
-    #     temperature=0.1,  # Default 0.7
-    #     top_p=0.9,  # Default 0.9
-    #     timeout=120,
-    #     # max_tokens=4096,
-    #     # context_window=16384,
-    #     is_function_calling_model=True,
-    #     is_chat_model=True,
-    # )
     llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
 
     embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
