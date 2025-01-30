@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
 from datasets.search import BaseIndex
+from llama_index.core import StorageContext
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.schema import BaseNode, TransformComponent
@@ -16,7 +17,7 @@ class IndexStrategy(ABC, BaseModel):
 
 
     @abstractmethod
-    def build_index(self, llm: BaseLLM, embed_model: BaseEmbedding, namespace: str, nodes: List[BaseNode] | Dict[str, List[BaseNode]], transforms: List[TransformComponent] | None = None) -> Dict[Any, BaseIndex]:
+    def build_index(self, llm: BaseLLM, embed_model: BaseEmbedding, namespace: str, storage_context: StorageContext, nodes: List[BaseNode] | Dict[str, List[BaseNode]], transforms: List[TransformComponent] | None = None) -> Dict[Any, BaseIndex]:
         pass
 
     @classmethod

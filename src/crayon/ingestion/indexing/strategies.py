@@ -1,13 +1,12 @@
 from typing import List, Any, Dict
 
-from llama_index.core import VectorStoreIndex, Settings
+from llama_index.core import VectorStoreIndex, Settings, load_index_from_storage, StorageContext
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.schema import BaseNode, TransformComponent
 
-from crayon import get_storage_context_filesystem
 from crayon.ingestion.indexing import IndexStrategy
 
 
@@ -17,12 +16,12 @@ class SimpleIndexStrategy(IndexStrategy):
         llm: BaseLLM,
         embed_model: BaseEmbedding,
         namespace: str,
+        storage_context: StorageContext,
         nodes: List[BaseNode] | Dict[str, List[BaseNode]],
         transforms: List[TransformComponent] | None = None
     ) -> Dict[Any, BaseIndex]:
         index_set = {}
 
-        storage_context = get_storage_context_filesystem(db_name=self.db_name)
         if transforms is not None:
             processed_nodes = IngestionPipeline(transformations=transforms).run(nodes=nodes, in_place=False, show_progress=True)
         else:
@@ -56,11 +55,11 @@ class IndexByYear(IndexStrategy):
         llm: BaseLLM,
         embed_model: BaseEmbedding,
         namespace: str,
+        storage_context: StorageContext,
         nodes: List[BaseNode] | Dict[str, List[BaseNode]],
         transforms: List[TransformComponent] | None = None,
     ) -> Dict[Any, BaseIndex]:
         index_set = {}
-        storage_context = get_storage_context_filesystem(db_name=self.db_name)
 
         if isinstance(nodes, list):
             year_dict = self._create_node_dict(nodes)
@@ -68,6 +67,14 @@ class IndexByYear(IndexStrategy):
             year_dict = nodes
 
         for year in year_dict.keys():
+            try:
+                _index = load_index_from_storage(storage_context, f"{namespace}_{year}_VectorIndex")
+                if _index is not None:
+                    index_set[year] = _index
+                    continue
+            except Exception as e:
+                pass
+
             year_nodes = year_dict[year]
             if transforms is not None:
                 processed_nodes = IngestionPipeline(transformations=transforms).run(nodes=year_nodes, in_place=False, show_progress=True)

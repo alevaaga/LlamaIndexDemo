@@ -1,10 +1,10 @@
 import re
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 import llama_index
 from llama_index.agent.openai import OpenAIAgent
-from llama_index.core import Settings, load_indices_from_storage, ServiceContext
-from llama_index.core.agent import FunctionCallingAgentWorker
+from llama_index.core import Settings, load_indices_from_storage
+from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.callbacks import LlamaDebugHandler
 from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.core.indices.base import BaseIndex
@@ -18,7 +18,6 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
-from ollamaramaagent import OllamaRamaAgent
 
 
 def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[QueryEngineTool]:
@@ -56,7 +55,7 @@ def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[Qu
     return all_tools
 
 
-def load_indices() -> Dict[str, Dict[Any, BaseIndex]]:
+def load_indices() -> Dict[str, Dict[Any, Any]]:
     print("Initializing context.....")
     storage_context = crayon.get_storage_context_filesystem(db_name="MultiIndex")
 
@@ -77,12 +76,14 @@ def load_indices() -> Dict[str, Dict[Any, BaseIndex]]:
     return companies_index_set
 
 
-def create_chat_engine() -> BaseChatEngine:
+def create_chat_engine(llm: Optional[BaseLLM] = None) -> BaseChatEngine:
+    llm = llm or Settings.llm
+
     companies_index_set = load_indices()
     all_tools = build_tools(companies_index_set)
 
     memory = ChatMemoryBuffer.from_defaults(token_limit=10000)
-    agent = OpenAIAgent.from_tools(tools=all_tools, llm=Settings.llm, memory=memory, verbose=True)
+    agent = OpenAIAgent.from_tools(tools=all_tools, llm=llm, memory=memory, verbose=True)
     return agent
 
 

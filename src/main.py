@@ -10,9 +10,9 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 
 import crayon
-from crayon.finance_chatbot import create_chat_engine as create_chat_engine_full
-from crayon.finance_chatbot_hello_world import create_chat_engine as create_chat_engine_hello_world
-from crayon.finance_chatbot_simple import create_chat_engine as create_chat_engine_simple
+from crayon.chatbots.finance_chatbot import create_chat_engine as create_chat_engine_full
+from crayon.chatbots.finance_chatbot_hello_world import create_chat_engine as create_chat_engine_hello_world
+from crayon.chatbots.finance_chatbot_simple import create_chat_engine as create_chat_engine_simple
 
 #
 # PyCharm debugger issues:
@@ -71,14 +71,13 @@ def main():
         return citations
 
     chatbot = gr.Chatbot(height=500)
-
     chat_interface = gr.ChatInterface(
         predict,
         chatbot=chatbot,
         textbox=gr.Textbox(placeholder="Ask me something", container=False, scale=7, lines=4),
         theme="soft",
         examples=[
-            ["Compare the profitability of Crayon and SoftwareOne, year of year, from 2019 through 2023"],
+            ["Compare the profitability of Crayon and SoftwareOne, year of year, from 2019 through 2023. Explain your reasoning."],
             ["How much did Crayon's gross profit increase from 2018 to 2023?"],
             ["What was Crayon's total revenue in 2023?"],
             ["How much did it grow from 2022?"],
@@ -97,19 +96,22 @@ def main():
     )
 
     with gr.Blocks(fill_height=True) as demo:
-        with gr.Row():
-            with gr.Column():
-                chat_interface.render()
-                backend_radio = gr.Radio(choices=[
-                    ("Hello, World", "hello_world"),
-                    ("Index pr. Company", "simple"),
-                    ("Index pr. Document", "full")
-                ], label="Backend", value="full")
-                backend_radio.select(fn=select_backend, inputs=backend_radio)
-            with gr.Column():
-                # output = gr.TextArea(label="Citations")
-                output = gr.HTML()
-                chat_interface.chatbot.change(fn=get_citation, outputs=output)
+        with gr.Tab("Chatbot"):
+            with gr.Row():
+                with gr.Column():
+                    chat_interface.render()
+                    backend_radio = gr.Radio(choices=[
+                        ("Hello, World", "hello_world"),
+                        ("Index pr. Company", "simple"),
+                        ("Index pr. Document", "full")
+                    ], label="Backend", value="full")
+                    backend_radio.select(fn=select_backend, inputs=backend_radio)
+                with gr.Column():
+                    # output = gr.TextArea(label="Citations")
+                    output = gr.HTML()
+                    chat_interface.chatbot.change(fn=get_citation, outputs=output)
+        with gr.Tab("Evaluation"):
+            gr.Text("Evaluation")
 
     demo.launch()
 
@@ -118,16 +120,16 @@ if __name__ == '__main__':
     crayon.STORAGE_ROOT = "storage/Finance"
     crayon.CACHE_ROOT = "storage/cache"
 
-    llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
+    # llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
 
-    # llm = OpenAI(
-    #     api_base="http://wizzo.akhbar.home:5000/v1",
-    #     api_key="sk-ollama",
-    #     model="gpt-4-turbo",
-    #     temperature=1.0,
-    #     timeout=180,
-    #     verbose=True
-    # )
+    llm = OpenAI(
+        api_base="http://wizzo.akhbar.home:5000/v1",
+        api_key="sk-ollama",
+        model="gpt-4-turbo",
+        temperature=0.5,
+        timeout=180,
+        verbose=True
+    )
 
     embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
     Settings.llm = llm

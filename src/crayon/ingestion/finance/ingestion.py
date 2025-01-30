@@ -1,24 +1,23 @@
+import os
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict
+
 import pandas as pd
-from llama_index.core import SimpleDirectoryReader, Document, Settings
-from llama_index.readers.file import UnstructuredReader
-from pandas import DataFrame
+from llama_index.core import Document, Settings
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.schema import BaseNode
 from six import StringIO
 from unstructured.documents.elements import Element
-
-import crayon
-from unstructured.partition.pdf import partition_pdf
 from unstructured.partition.auto import partition
-import os
-
 from unstructured.partition.utils.constants import OCR_AGENT_PADDLE
 
+import crayon
+
 os.environ["OCR_AGENT"] = OCR_AGENT_PADDLE #"unstructured.partition.utils.ocr_models.paddle_ocr.OCRAgentPaddle"
+MIN_SIZE = 300
 
-
-def load_documents(base_dir: Path) -> Dict[str, List[Document]]:
+def load_documents(base_dir: Path) -> Dict[str, List[BaseNode]]:
     Path(crayon.CACHE_ROOT).mkdir(parents=True, exist_ok=True)
 
     pkl_file = Path(crayon.CACHE_ROOT) / f"{str(Path(base_dir).name)}.pkl"
@@ -40,8 +39,8 @@ def load_documents(base_dir: Path) -> Dict[str, List[Document]]:
                 doc.metadata["company"] = company
                 doc.metadata["year"] = year
                 doc.metadata["num_tokens"] = len(num_tokens)
-                docs = company_docs[year]
-                docs.append(doc)
+                nodes = SentenceSplitter.from_defaults(chunk_size=1024, chunk_overlap=0).get_nodes_from_documents([doc])
+                company_docs[year].extend(nodes)
 
         with open(pkl_file, 'wb') as f:
             pickle.dump(company_docs, f)
@@ -50,16 +49,13 @@ def load_documents(base_dir: Path) -> Dict[str, List[Document]]:
         with open(pkl_file, 'rb') as inp:
             company_docs = pickle.load(inp)
 
+    for year in company_docs:
+        company_docs[year] = list(filter(lambda doc: doc.metadata["num_tokens"] > MIN_SIZE, company_docs[year]))
+
     return company_docs
 
 
 def read_pdf(sourcefile) -> List[Tuple[str, Dict[str, str], List[str]]]:
-    # elements = partition_pdf(
-    #     filename=sourcefile,
-    #     infer_table_structure=True,
-    #     extract_images_in_pdf=True,
-    #     strategy="hi_res")
-
     elements = partition(
         filename=str(sourcefile),
         infer_table_structure=True,

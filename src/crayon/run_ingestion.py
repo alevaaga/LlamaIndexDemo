@@ -40,6 +40,7 @@ def build_indices(base_dir: str, db_name: str, llm: BaseLLM, embed_model: BaseEm
         company_name = company_path.name
         print(f"Loading documents for {company_name}.....")
         company_docs = load_documents(base_dir=company_path)
+        storage_context = crayon.get_storage_context_filesystem(db_name=db_name)
 
         print(f"Creating Index for {company_path}.....")
         index_strategy = IndexStrategies["by_year"].create(db_name=db_name)
@@ -47,6 +48,7 @@ def build_indices(base_dir: str, db_name: str, llm: BaseLLM, embed_model: BaseEm
             llm=llm,
             embed_model=embed_model,
             namespace=company_name,
+            storage_context=storage_context,
             nodes=company_docs,
             transforms=get_transformations()
         )

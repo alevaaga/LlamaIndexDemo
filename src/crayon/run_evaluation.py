@@ -28,6 +28,8 @@ from llama_index.core.node_parser import HierarchicalNodeParser
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import RecursiveRetriever
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.base import DEFAULT_OPENAI_MODEL
 from llama_index.llms.openai_like import OpenAILike
 
 from crayon import get_storage_context_filesystem
@@ -172,25 +174,11 @@ def main():
 if __name__ == '__main__':
     nest_asyncio.apply()
 
-    # llm = OpenAILike(model="dolphin-mixtral", api_base="http://ws239.akhbar.home:5000/v1", api_key="sk-1232434455")
-    llm = OpenAILike(
-        # model="nous-hermes2-mixtral",
-        # model="llama3:8b-instruct-fp16",
-        model="llama3:70b-instruct-q4_K_M",
-        api_base="http://ws239.akhbar.home:5000/v1",
-        api_key="sk-ollama",
-        temperature=0.5,  # Default 0.7
-        top_p=0.9,  # Default 0.9
-        timeout=9999,
-        # max_tokens=4096,
-        # context_window=16384,
-        # is_function_calling_model=True,
-        is_chat_model=True,
-    )
+    llm = OpenAI(model=DEFAULT_OPENAI_MODEL)
     embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
-    # embed_model = InstructorEmbedding(model_name="hkunlp/instructor-base")
 
     Settings.llm = llm
     Settings.embed_model = embed_model
     Settings.callback_manager = CallbackManager()
+    Settings.context_window = 16384
     main()

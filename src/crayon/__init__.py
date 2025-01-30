@@ -19,6 +19,7 @@ logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 STORAGE_ROOT = "./storage/Finance"
 CACHE_ROOT = "storage/cache"
+EVALUATION_ROOT = "storage/evaluation"
 
 
 class StorageContextWrapper(StorageContext):
