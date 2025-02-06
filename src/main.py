@@ -1,4 +1,5 @@
 from collections import defaultdict
+from pathlib import Path
 
 import gradio as gr
 from llama_index.core import Settings
@@ -113,10 +114,13 @@ def main():
         with gr.Tab("Evaluation"):
             gr.Text("Evaluation")
 
-    demo.launch()
+    demo.launch(server_name="0.0.0.0")
 
 
 if __name__ == '__main__':
+    print(f"Current directory: {Path('.').resolve()}")
+    print("List of files:")
+    print(list(Path('.').glob("*")))
     crayon.STORAGE_ROOT = "storage/Finance"
     crayon.CACHE_ROOT = "storage/cache"
 

@@ -28,7 +28,7 @@ def build_tools(companies_index_set: Dict[str, Dict[Any, BaseIndex]]) -> List[Qu
 
         individual_query_engine_tools = [
             QueryEngineTool(
-                query_engine=index_set[year].as_query_engine(),
+                query_engine=index_set[year].as_query_engine(similarity_top_k=5),
                 metadata=ToolMetadata(
                     name=f"vector_index_{company}_{year}",
                     description=f"useful for when you want to answer queries about the {year} SEC 10-K for {company}",

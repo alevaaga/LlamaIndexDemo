@@ -1,0 +1,42 @@
+services:
+  demoapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7860:7860"
+    volumes:
+#      - ${HOME}/.cache:/root/.cache
+      - ./paddleocr:/root/.paddleocr
+#      - ./data:/app/data
+      - ./data:/project/data
+      - ./src:/app
+#      - ./storage2:/app/storage
+      - ./storage2:/project/storage
+    working_dir: /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '1' ]
+              capabilities: [ gpu ]
+
+#  mongodb:
+#    image: mongo
+#    hostname: mongodb
+#    command: mongod --quiet --logpath /var/log/mongodb/server1.log --logappend
+#    ports:
+#      - "27017:27017"
+#    volumes:
+#      - ./mongodb:/data/db
+#    restart: always
+
+#  redis:
+#    image: redis
+#    hostname: redis
+#    ports:
+#      - "6379:6379"
+#    volumes:
+#      - ./redis:/data
+#    restart: always

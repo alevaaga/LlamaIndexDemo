@@ -1,0 +1,85 @@
+#ARG PYTHON_BASE=2.4.0-cuda12.4-cudnn9-devel
+
+# build stage
+#FROM pytorch/pytorch:$PYTHON_BASE AS builder
+FROM pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel
+
+RUN apt update && apt upgrade -y
+RUN apt install vim git -y
+
+RUN DEBIAN_FRONTEND="noninteractive" TZ="Europe/Oslo" apt install portaudio19-dev ffmpeg chromium-codecs-ffmpeg-extra build-essential -y
+RUN apt install libmagic1 wget libnvinfer10 libnvonnxparsers10  tensorrt tensorrt-libs tensorrt-dev python3-pip -y
+
+RUN --mount=type=cache,id=apt-build,target=/var/cache/apt \
+    apt install -y build-essential \
+    git \
+    clang \
+    libnvinfer-lean10 libnvinfer-vc-plugin10 python3-libnvinfer-lean poppler-utils tesseract-ocr-all
+
+RUN mkdir -p /root/.paddleocr
+#COPY Packages/paddleocr /root/.paddleocr
+RUN if [ ! -f /root/.paddleocr/whl/det/en/en_PP-OCRv3_det_infer.tar ]; \
+    then \
+    echo -e "\033[0;31m\u10102 - en_PP-OCRv3_det_infer.tar NOT found! Downloading....!\033[0m" \
+    mkdir -p /root/.paddleocr/whl/det ; \
+    wget https://paddleocr.bj.bcebos.com/PP-OCRv3/english/en_PP-OCRv3_det_infer.tar -P /root/.paddleocr/whl/det/en/ \
+    else ; \
+    echo -e "\033[0;32m\u2705 - en_PP-OCRv3_det_infer.tar found! Skipping download!\033[0m" ; \
+    fi
+WORKDIR /root/.paddleocr/whl/det/en
+RUN tar xvf en_PP-OCRv3_det_infer.tar
+
+RUN if [ ! -f /root/.paddleocr/whl/rec/en/en_PP-OCRv3_rec_infer.tar ]; \
+    then \
+    echo -e "\033[0;31m\u10102 - en_PP-OCRv3_rec_infer.tar NOT found! Downloading....!\033[0m" \
+    mkdir -p /root/.paddleocr/whl/rec/en ; \
+    wget https://paddleocr.bj.bcebos.com/PP-OCRv3/english/en_PP-OCRv3_rec_infer.tar -P /root/.paddleocr/whl/rec/en/ \
+    else ; \
+    echo -e "\033[0;32m\u2705 - en_PP-OCRv3_rec_infer.tar found! Skipping download!\033[0m" ; \
+    fi
+WORKDIR /root/.paddleocr/whl/rec/en
+RUN tar xvf en_PP-OCRv3_rec_infer.tar
+
+RUN if [ ! -f /root/.paddleocr/whl/cls/ch_ppocr_mobile_v2.0_cls_infer.tar ]; \
+    then \
+    echo -e "\033[0;31m\u10102 - ch_ppocr_mobile_v2.0_cls_infer.tar NOT found! Downloading....!\033[0m" \
+    mkdir -p /root/.paddleocr/whl/cls ; \
+    wget https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_infer.tar -P /root/.paddleocr/whl/cls/ \
+    else ; \
+    echo -e "\033[0;32m\u2705 - ch_ppocr_mobile_v2.0_cls_infer.tar found! Skipping download!\033[0m" ; \
+    fi
+WORKDIR /root/.paddleocr/whl/cls
+RUN tar xvf ch_ppocr_mobile_v2.0_cls_infer.tar
+
+
+# install PDM
+RUN /opt/conda/bin/pip install -U pdm
+RUN pdm config python.use_venv false
+
+# disable update check
+ENV PDM_CHECK_UPDATE=false
+# copy files
+RUN mkdir -p /project
+COPY pyproject.toml pdm.lock README.md /project/
+COPY src/ /project/
+
+# install dependencies and project into the local packages directory
+WORKDIR /project
+RUN --mount=type=cache,target=/root/.cache/pip pdm install --check --prod --no-editable \
+    && pdm run python -m ensurepip
+
+ENV PATH="/project/.venv/bin:$PATH"
+RUN --mount=type=cache,target=/root/.cache/pip pdm run pip uninstall onnxruntime -y \
+    && pdm run pip install onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
+
+# run stage
+#FROM pytorch/pytorch:$PYTHON_BASE
+
+# retrieve packages from build stage
+#COPY --from=builder /project/.venv/ /project/.venv
+#ENV PATH="/project/.venv/bin:$PATH"
+# set command/entrypoint, adapt to fit your needs
+
+EXPOSE 7860
+
+CMD ["python3", "main.py"]

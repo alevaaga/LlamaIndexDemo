@@ -8,6 +8,7 @@ from llama_index.core import Document, Settings
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import BaseNode
 from six import StringIO
+from tqdm import tqdm
 from unstructured.documents.elements import Element
 from unstructured.partition.auto import partition
 from unstructured.partition.utils.constants import OCR_AGENT_PADDLE
@@ -25,7 +26,9 @@ def load_documents(base_dir: Path) -> Dict[str, List[BaseNode]]:
         import pickle
 
         company_docs = defaultdict(list)
-        for sourcefile in base_dir.glob('**/*'):
+        progress_bar = tqdm(base_dir.glob('**/*'), total=len(list(base_dir.glob('**/*'))))
+        for sourcefile in progress_bar:
+            progress_bar.set_description(f"Processing {sourcefile}")
             pages = read_pdf(sourcefile)
             for page, metadata, tables in pages:
                 doc = Document(
