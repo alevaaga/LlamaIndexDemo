@@ -7,7 +7,7 @@ FROM pytorch/pytorch:$PYTHON_BASE AS builder
 RUN apt update && apt upgrade -y
 RUN apt install vim git -y
 
-RUN DEBIAN_FRONTEND="noninteractive" TZ="Europe/Oslo" apt install portaudio19-dev ffmpeg chromium-codecs-ffmpeg-extra build-essential -y
+RUN DEBIAN_FRONTEND="noninteractive" TZ="Europe/Oslo" apt install portaudio19-dev ffmpeg chromium-codecs-ffmpeg-extra build-essential clang -y
 RUN apt install libmagic1 wget libnvinfer10 libnvonnxparsers10  tensorrt tensorrt-libs tensorrt-dev python3-pip -y
 
 RUN --mount=type=cache,id=apt-build,target=/var/cache/apt \
