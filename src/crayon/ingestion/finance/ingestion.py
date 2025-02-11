@@ -13,7 +13,27 @@ from unstructured.documents.elements import Element
 from unstructured.partition.auto import partition
 from unstructured.partition.utils.constants import OCR_AGENT_PADDLE
 
+import os
+from warnings import filterwarnings
+
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import (
+    AcceleratorDevice,
+    AcceleratorOptions,
+    PdfPipelineOptions,
+)
+from docling.datamodel.settings import settings
+from docling.document_converter import DocumentConverter, PdfFormatOption, HTMLFormatOption, AsciiDocFormatOption
+from llama_index.core import Document
+from spacy.matcher.dependencymatcher import defaultdict
+
 import crayon
+
+filterwarnings(action="ignore", category=UserWarning, module="pydantic")
+filterwarnings(action="ignore", category=FutureWarning, module="easyocr")
+# https://github.com/huggingface/transformers/issues/5486:
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 
 os.environ["OCR_AGENT"] = OCR_AGENT_PADDLE #"unstructured.partition.utils.ocr_models.paddle_ocr.OCRAgentPaddle"
 MIN_SIZE = 300
@@ -29,12 +49,13 @@ def load_documents(base_dir: Path) -> Dict[str, List[BaseNode]]:
         progress_bar = tqdm(base_dir.glob('**/*'), total=len(list(base_dir.glob('**/*'))))
         for sourcefile in progress_bar:
             progress_bar.set_description(f"Processing {sourcefile}")
-            pages = read_pdf(sourcefile)
-            for page, metadata, tables in pages:
-                doc = Document(
-                    text=page,
-                    metadata=metadata
-                )
+            pages = read_pdf_docling(sourcefile)
+            # for page, metadata, tables in pages:
+            #     doc = Document(
+            #         text=page,
+            #         metadata=metadata
+            #     )
+            for doc in pages:
                 filename = doc.metadata.get("filename", "")
                 year = int(filename.split("_")[-1].split(".")[0])
                 company = filename.split("_")[0]
@@ -56,6 +77,77 @@ def load_documents(base_dir: Path) -> Dict[str, List[BaseNode]]:
         company_docs[year] = list(filter(lambda doc: doc.metadata["num_tokens"] > MIN_SIZE, company_docs[year]))
 
     return company_docs
+
+
+def read_pdf_docling(sourcefile: Path, add_table_to_metadata: bool = False) -> List[Document]:
+    accelerator_options = AcceleratorOptions(
+        num_threads=8, device=AcceleratorDevice.CUDA
+    )
+    pipeline_options = PdfPipelineOptions()
+    pipeline_options.accelerator_options = accelerator_options
+    pipeline_options.do_ocr = True
+    pipeline_options.do_table_structure = True
+    pipeline_options.table_structure_options.do_cell_matching = True
+
+    if sourcefile.suffix == ".pdf":
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(
+                    pipeline_options=pipeline_options,
+                )
+            }
+        )
+    elif sourcefile.suffix == ".html":
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.HTML: HTMLFormatOption(
+                    pipeline_options=pipeline_options,
+                )
+            }
+        )
+    else:
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.ASCIIDOC: AsciiDocFormatOption(
+                    pipeline_options=pipeline_options,
+                )
+            }
+        )
+
+
+    # Enable the profiling to measure the time spent
+    settings.debug.profile_pipeline_timings = True
+
+    conversion_result = converter.convert(sourcefile)
+    doc_conversion_secs = conversion_result.timings["pipeline_total"].times
+
+    doc = conversion_result.document
+
+    tables = defaultdict(list)
+    for t in doc.tables:
+        if len(t.prov) == 0:
+            continue
+        tables[t.prov[0].page_no].append(t)
+
+    pages = doc.pages
+
+    ldcos = []
+    for page in pages.values():
+        table = tables[page.page_no]
+        text = doc.export_to_markdown(page_no=page.page_no)
+        m = {
+            "mimetype": doc.origin.mimetype,
+            "page_number": page.page_no,
+            "filename": doc.origin.filename,
+        }
+        if doc.origin.uri:
+            m["uri"] = doc.origin.uri
+        if table and add_table_to_metadata:
+            m["table"] = table
+
+        ldcos.append(Document(text=text, metadata=m))
+
+    return ldcos
 
 
 def read_pdf(sourcefile) -> List[Tuple[str, Dict[str, str], List[str]]]:

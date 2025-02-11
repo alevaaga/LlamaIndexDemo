@@ -12,7 +12,7 @@ services:
       - ./data:/project/data
       - ./src:/app
 #      - ./storage2:/app/storage
-      - ./storage2:/project/storage
+      - ./storage:/app/storage
     working_dir: /app
     deploy:
       resources:

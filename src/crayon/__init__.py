@@ -49,6 +49,7 @@ class StorageContextWrapper(StorageContext):
 
 def get_storage_context_filesystem(db_name: str):
     persist_dir = Path(STORAGE_ROOT) / db_name
+    print(f"Persist dir: {list(persist_dir.glob('*'))}")
     index_names = ["index_store.json", "docstore.json", "default__vector_store.json", "graph_store.json"]
     existing_files = [p.name for p in persist_dir.glob("*")] if persist_dir.exists() else []
     if persist_dir.exists() and all(ind in existing_files for ind in index_names):
