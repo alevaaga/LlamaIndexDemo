@@ -114,6 +114,8 @@ def main():
                     citations_component.render()
         with gr.Tab("Evaluation"):
             gr.Text("Evaluation")
+        with gr.Tab("Ingestion"):
+            gr.Text("Ingestion")
 
     demo.launch(server_name="0.0.0.0", pwa=True)
 

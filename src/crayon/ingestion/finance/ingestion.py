@@ -1,21 +1,11 @@
+from collections import defaultdict
 import os
 from collections import defaultdict
 from pathlib import Path
 from typing import List, Tuple, Dict
-
-import pandas as pd
-from llama_index.core import Document, Settings
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.schema import BaseNode
-from six import StringIO
-from tqdm import tqdm
-from unstructured.documents.elements import Element
-from unstructured.partition.auto import partition
-from unstructured.partition.utils.constants import OCR_AGENT_PADDLE
-
-import os
 from warnings import filterwarnings
 
+import pandas as pd
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
     AcceleratorDevice,
@@ -25,7 +15,15 @@ from docling.datamodel.pipeline_options import (
 from docling.datamodel.settings import settings
 from docling.document_converter import DocumentConverter, PdfFormatOption, HTMLFormatOption, AsciiDocFormatOption
 from llama_index.core import Document
+from llama_index.core import Settings
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.schema import BaseNode
+from six import StringIO
 from spacy.matcher.dependencymatcher import defaultdict
+from tqdm import tqdm
+from unstructured.documents.elements import Element
+from unstructured.partition.auto import partition
+from unstructured.partition.utils.constants import OCR_AGENT_PADDLE
 
 import crayon
 

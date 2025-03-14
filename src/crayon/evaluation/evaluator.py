@@ -160,12 +160,16 @@ async def run_rag_evaluations(llm: BaseLLM, eval_datasets: Dict[str, Dict[str, L
             )
 
             questions = [ex.query for ex in rag_dataset.examples]
-            eval_results = await runner.aevaluate_queries(
-                query_engine, queries=questions
-            )
-            for metric in eval_results.keys():
-                score = get_eval_results(metric, eval_results)
-                company_scores[metric][year] = score
+            try:
+                eval_results = await runner.aevaluate_queries(
+                    query_engine, queries=questions
+                )
+                for metric in eval_results.keys():
+                    score = get_eval_results(metric, eval_results)
+                    company_scores[metric][year] = score
+            except Exception as err:
+                print(f"Error evaluating {company} {year}: {err}")
+
 
         all_results[company] = company_scores
 
@@ -217,6 +221,8 @@ async def run_retrieval_evaluations(eval_datasets: Dict[str, Dict[str, Embedding
                 company_metric_dicts.append(metric_dict)
 
         full_df = pd.DataFrame(company_metric_dicts)
+        if len(full_df) == 0:
+            continue
         name = f"{company}_top5"
         columns = {
             "retrievers": [name],
@@ -236,8 +242,8 @@ def main(base_dir: Path, llm: BaseLLM, db_name: str):
     rag_eval_datasets = asyncio.get_event_loop().run_until_complete(create_rag_dataset(base_dir, llm, skip_missing=False, db_name=db_name))
     qa_eval_dataset = create_retriever_eval_dataset(base_dir, llm, db_name=db_name)
 
-    asyncio.get_event_loop().run_until_complete(run_rag_evaluations(llm, rag_eval_datasets))
     asyncio.get_event_loop().run_until_complete(run_retrieval_evaluations(qa_eval_dataset))
+    asyncio.get_event_loop().run_until_complete(run_rag_evaluations(llm, rag_eval_datasets))
 
 
 

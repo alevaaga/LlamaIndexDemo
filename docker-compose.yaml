@@ -6,12 +6,9 @@ services:
     ports:
       - "7860:7860"
     volumes:
-#      - ${HOME}/.cache:/root/.cache
       - ./paddleocr:/root/.paddleocr
-#      - ./data:/app/data
       - ./data:/project/data
       - ./src:/app
-#      - ./storage2:/app/storage
       - ./storage:/app/storage
     working_dir: /app
     deploy:
